@@ -107,8 +107,6 @@ def get_second_solution():
 
     return [directory for directory in dir_sizes_sorted if directory[1] >= size_needed][0][1]
 
-    #return find_all_dir_sizes(root_dir)
-
 
 
 print(get_first_solution())
