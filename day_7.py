@@ -87,7 +87,6 @@ def get_first_solution():
     return add_dir_size(root_dir, size_threshold=100000)
 
 def get_second_solution():
-
     total_used_size = root_dir.calc_file_size()
     total_unused_size = 70000000 - total_used_size
     required_file_size = 30000000
