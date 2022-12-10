@@ -59,8 +59,11 @@ def get_second_solution():
                 break
 
             height = grid[i][j]
-            if (height <= current_height):
+            if height < current_height:
                 vision += 1
+            elif height >= current_height:
+                vision += 1
+                break
             else:
                 break
 
@@ -70,8 +73,12 @@ def get_second_solution():
     scores = [[0 for _ in range(shape[1])] for _ in range(shape[0])]
     for i in range(shape[0]):
         for j in range(shape[1]):
-            scores[i][j] = vision(inpt_parsed, (i, j), (0, 1)) * vision(inpt_parsed, (i, j), (0, -1)) * vision(inpt_parsed, (i, j), (1, 0)) * vision(inpt_parsed, (i, j), (-1, 0))
-            #print(f"({i}, {j}), Score {scores[i][j]}")
+            up = vision(inpt_parsed, (i, j), (-1, 0))
+            down = vision(inpt_parsed, (i, j), (1, 0))
+            left = vision(inpt_parsed, (i, j), (0, -1))
+            right = vision(inpt_parsed, (i, j), (0, 1))
+            scores[i][j] =  up*down*left*right
+            #print(f"({i}, {j}), Scores: up {up}, down {down}, left {left} right {right}, Total: {scores[i][j]}")
 
     return max([max(score) for score in scores])
 
