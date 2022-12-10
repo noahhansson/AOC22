@@ -48,7 +48,6 @@ def get_second_solution():
     def vision(grid: list[list[int]], starting_point: tuple[int, int], direction: tuple[int, int]) -> int:
         shape = (len(grid[0]), len(grid))
         i, j = starting_point
-        max_height = -1
         current_height = grid[i][j]
         vision = 0
         while True:
@@ -60,8 +59,7 @@ def get_second_solution():
                 break
 
             height = grid[i][j]
-            if (height >= max_height) and (height <= current_height):
-                max_height = height
+            if (height <= current_height):
                 vision += 1
             else:
                 break
