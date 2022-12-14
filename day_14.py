@@ -26,13 +26,14 @@ def get_walls() -> set[tuple[int, int]]:
     return walls
 
 def print_grid(walls: set[tuple[int, int]], sand: set[tuple[int, int]]) -> None:
-    y_max = max([coord[1] for coord in walls])
+    walls_and_sand = walls | sand
+    y_max = max([coord[1] for coord in walls_and_sand])
     y_min = 0
 
-    x_max = max([coord[0] for coord in walls])
-    x_min = min([coord[0] for coord in walls])
+    x_max = max([coord[0] for coord in walls_and_sand])
+    x_min = min([coord[0] for coord in walls_and_sand])
 
-    print_grid = [[" . " for _ in range(x_min, x_max + 1)] for _ in range(y_min, y_max + 1)]
+    print_grid = [["." for _ in range(x_min, x_max + 1)] for _ in range(y_min, y_max + 1)]
     for coord in sand:
         print_grid[coord[1] - y_min][coord[0] - x_min] = "o"
     for coord in walls:
@@ -46,16 +47,16 @@ def get_target(coord: tuple[int, int], walls: set[tuple[int, int]], sand: set[tu
     Returns the first valid point a grain of sand can fall to, in order of priority
     '''
     for dx, dy in [(0, 1), (-1, 1), (1, 1)]:
-        if ((target := (coord[0] + dx, coord[1] + dy)) not in (sand | walls)):
+        target = (coord[0] + dx, coord[1] + dy)
+        if target not in sand and target not in walls:
             return target
     return None
 
 
 def simulate_sand(walls: set[tuple[int, int]]) -> int:
     ymax = max([coord[1] for coord in walls])
-    spawn_point = (500, 0)
     sand = set()
-    current_sand = deepcopy(spawn_point)
+    current_sand = (500, 0)
 
     while True:
         if (target := get_target(current_sand, walls, sand)) is not None:
@@ -63,7 +64,7 @@ def simulate_sand(walls: set[tuple[int, int]]) -> int:
         else:
             #No more space for sand to fall, add it to sand set and spawn a new one
             sand.add((current_sand))
-            current_sand = deepcopy(spawn_point)
+            current_sand = (500, 0)
 
         if current_sand[1] > ymax:
             return len(sand)
@@ -75,13 +76,13 @@ def calculate_sand(walls: set[tuple[int, int]]) -> int:
     empty_spaces = set()
     for i, y in enumerate(range(spawn_point[1], ymax + 2)):
         for x in range(spawn_point[0] - i, spawn_point[0] + i + 1):
-            if (x,y) not in walls:
-                if all([coord in (walls | empty_spaces) for coord in [(x, y-1), (x-1, y-1), (x+1, y-1)]]):
+            if all([(coord in walls) and (coord in empty_spaces) for coord in [(x, y-1), (x-1, y-1), (x+1, y-1)]]):
+                if (x, y) not in walls:
                     empty_spaces.add((x,y))
-                else:
-                    sand.add((x, y))
+            else:
+                sand.add((x, y))
 
-    return len((sand - walls) - empty_spaces)
+    return len(sand - walls)
 
 walls = get_walls()
 print(simulate_sand(walls=walls))
