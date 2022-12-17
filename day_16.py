@@ -1,7 +1,8 @@
 from dataclasses import dataclass, field
-from typing_extensions import Self
+from utils import read_input
+from typing import Self
 from functools import cache
-import os
+from itertools import combinations
 import re
 
 @dataclass
@@ -30,23 +31,17 @@ class Valve:
                 for d, v in valve.get_connected():
                     self.add_connected(v, distance + d)
 
+        self.leads_to = {key: value for key, value in self.leads_to.items() if value[1].flow_rate > 0}
+
     def __repr__(self) -> str:
-        leads_to = [f"{key} distance: {distance}" for key, (distance, _) in self.leads_to.items()]
-        return f"Valve {self.name}, flow rate: {self.flow_rate}, leads to: {', '.join(leads_to)}"
+        return f"Valve {self.name}"
 
     def __hash__(self):
         return hash(self.name)
 
-def read_input(file_name:str) -> str:
-    input_file = os.path.join(os.getcwd(), "input", f"{file_name}.txt")
-    with open(input_file, 'r') as file:
-        contents = [val.strip() for val in file.readlines()]
 
-    return contents
-
-
-def get_valves():
-    inpt = read_input("15")
+def get_valves() -> dict[str, Valve]:
+    inpt = read_input("16")
 
     valves: dict[str, Valve] = {}
     for row in inpt:
@@ -64,19 +59,21 @@ def get_valves():
     for valve in valves.values():
         valve.branch_connected(15)
 
+    valves = {key: valve for key, valve in valves.items() if (valve.flow_rate > 0) or (key=="AA")}
+
     return valves
 
 @cache
-def dfs_search(current_valve: Valve, timer: int, opened: frozenset[Valve]) -> int:
+def dfs_search(current_valve: Valve, timer: int, opened: frozenset[Valve], required: frozenset[Valve]) -> int:
     if timer==0:
         return 0
     alternatives = []
     #Loop over connected valves plus current
     for distance, valve in current_valve.get_connected() + [(0, current_valve)]:
         #Move to an unopened valve and open it
-        if (valve not in opened) and (valve.flow_rate > 0):
+        if (valve not in opened) and (valve.flow_rate > 0) and (valve in required):
             if (timer - distance  - 1) > 0:
-                alternatives.append((timer - distance - 1)*valve.flow_rate + dfs_search(valve, timer - distance - 1, opened | frozenset([valve])))
+                alternatives.append((timer - distance - 1)*valve.flow_rate + dfs_search(valve, timer - distance - 1, opened | frozenset([valve]), required))
     if alternatives:
         return max(alternatives)
     else:
@@ -88,8 +85,24 @@ valves = get_valves()
 def get_first_solution():
     timer=30
     opened = frozenset()
+    required = frozenset(valves.values())
     start = valves["AA"]
-    print(timer, dfs_search(start, timer, opened))
+    return dfs_search(start, timer, opened, required)
 
-get_first_solution()
-    
+def get_second_solution():
+    timer=26
+    opened = frozenset()
+    scores = []
+    for r in range(len(valves) // 2):
+        for items in combinations(valves.values(), r):
+            required_1 = frozenset(items)
+            required_2 = frozenset(set(valves.values()) - required_1)
+
+            start = valves["AA"]
+            score = dfs_search(start, timer, opened, required_1) + dfs_search(start, timer, opened, required_2)
+            scores.append(score)
+
+    return max(scores)
+
+print(get_first_solution())
+print(get_second_solution())
