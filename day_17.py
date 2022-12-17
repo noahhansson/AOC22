@@ -1,7 +1,4 @@
 from utils import read_input
-from itertools import cycle
-from functools import cache
-from time import sleep
 
 inpt = read_input("17")
 inpt_parsed = [c for c in inpt[0]]
@@ -39,7 +36,6 @@ def drop_rock(
 
     key = hash(settled_rocks) + hash(rock_type) + hash(jet_index)
     if key in rock_cache.keys():
-        #print(f"Returned cached value for rock type {rock_type}, jet index {jet_index}")
         return rock_cache[key]
 
     '''
@@ -87,28 +83,26 @@ def drop_rock(
         ):
             #Rock has collided, do not move and add all points to settled rocks
             rock_cache[key] = (rock, i)
-            #print(f"Cached value for rock type {rock_type}, jet index {jet_index}")
             return rock, i
 
         rock = moved_rock
 
 
 def solve(n_rocks: int):
-
     rock_idx = 0
     settled_rocks = frozenset()
     jet_idx = 0
     total_height = 0
 
+    cycles = []
     while True:
         if (rock_idx % 5000 == 0) and (rock_idx != 0):
-            #draw_rocks(settled_rocks)
             print(rock_idx)
 
         if rock_idx == (n_rocks):
             return total_height + max([y for _, y in settled_rocks]) + 1
 
-        n = 30
+        n = 50
         if settled_rocks:
             max_y = max([y for _, y in settled_rocks])
         else:
@@ -121,6 +115,9 @@ def solve(n_rocks: int):
 
         rock_type = rock_idx % len(rocks)
         #Create a set of the top n rows of settled rocks
+
+        key = hash(settled_rocks) + hash(rock_type) + hash(jet_idx)
+        cycles.append(key)
         settled_rock, jet_idx = drop_rock(
                                     settled_rocks, 
                                     rock_type,
@@ -128,16 +125,19 @@ def solve(n_rocks: int):
 
         settled_rocks = frozenset(rock for rock in settled_rocks | frozenset(settled_rock))
 
-        #draw_rocks(settled_rocks=settled_rocks)
-        #sleep(2)
-
         rock_idx += 1
 
 def get_first_solution():
     return solve(2022)
 
 def get_second_solution():
-    return solve(1000000000000)
+    cycle_length = 1720 # Found by eyeballing data
+    cycle_start = 885
+    start_height = solve(cycle_start)
+    cycle_height = solve(cycle_length + cycle_start) - start_height
+    rest_idx = (1000000000000 - cycle_start) % cycle_length
+    rest_height = solve(cycle_length + cycle_start + rest_idx) - start_height - cycle_height
+    return start_height + ((1000000000000 - cycle_start) // cycle_length) * cycle_height + rest_height
 
 print(get_first_solution())
-#print(get_second_solution())
+print(get_second_solution())
