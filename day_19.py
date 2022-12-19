@@ -81,8 +81,7 @@ def solve_blueprint(
 
     return max_geodes
 
-State = tuple[tuple[int, ...], int, int, tuple[int, int], tuple[int, int]]
-state_cache: dict[State: tuple[int, State]] = {}
+state_cache = {}
 
 def get_next_states(
     state: tuple[int, ...],
