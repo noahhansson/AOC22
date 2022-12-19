@@ -60,7 +60,6 @@ def solve_blueprint(
             if (n_geodes := state[4]) > max_geodes:
                 max_geodes = n_geodes
                 print(f"Iteration {i}: found new max: {max_geodes}")
-                print(f"Ending state: {state}")
         else:
             costs = (
                 clay_robot_cost,
@@ -82,7 +81,8 @@ def solve_blueprint(
 
     return max_geodes
 
-state_cache = {}
+State = tuple[tuple[int, ...], int, int, tuple[int, int], tuple[int, int]]
+state_cache: dict[State: tuple[int, State]] = {}
 
 def get_next_states(
     state: tuple[int, ...],
@@ -123,10 +123,17 @@ def get_next_states(
     ])
 
     if cache_key in state_cache.keys():
-        return [
-            (state[0] - 1, *cached_state)
-            for cached_state in state_cache[cache_key]
-        ]
+        time_seen, return_states = state_cache[cache_key]
+        if time_seen >= state[0]:
+            #This state has been seen at an earlier or equal time point,
+            #No need to search further as it can't be better than the 
+            #point seen before
+            return []
+        else:
+            return [
+                (state[0] - 1, *cached_state)
+                for cached_state in return_states
+            ]
 
     next_states = []
 
@@ -152,6 +159,7 @@ def get_next_states(
     )
 
     if can_build_geode_robot:
+        #Always build a geode robot if available
         next_states.append((
             state[0] - 1,
             state[1] + clay_generated,
@@ -179,7 +187,6 @@ def get_next_states(
                 state[8]
             ))
 
-        #Evaluate building either clay or ore robots
         if can_build_clay_robot:
             next_states.append((
                 state[0] - 1,
@@ -206,22 +213,24 @@ def get_next_states(
                 state[8]
             ))
 
-        #Base alternative - do nothing
-        next_states.append((
-            state[0] - 1,
-            state[1] + clay_generated,
-            state[2] + ore_generated,
-            state[3] + obsidian_generated,
-            state[4] + geode_generated,
-            state[5],
-            state[6],
-            state[7],
-            state[8]
-        ))
+        if not can_build_obsidian_robot:
+            #Do nothing. Only a valid alternative if neither a geode nor
+            #obsidian robot can be built
+            next_states.append((
+                state[0] - 1,
+                state[1] + clay_generated,
+                state[2] + ore_generated,
+                state[3] + obsidian_generated,
+                state[4] + geode_generated,
+                state[5],
+                state[6],
+                state[7],
+                state[8]
+            ))
 
-    state_cache[cache_key] = [
+    state_cache[cache_key] = (state[0], [
         state[1:] for state in next_states
-    ]
+    ])
 
     return next_states
 
@@ -283,6 +292,6 @@ def get_second_solution():
     return geode_product
 
 
-test_solution()
-#print(get_first_solution())
-#print(get_second_solution())
+#test_solution()
+print(get_first_solution())
+print(get_second_solution())
