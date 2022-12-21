@@ -31,7 +31,7 @@ def eval_monkey(monkey_name: str, monkeys: dict[str: int | list[str]], humn_valu
                 case '-':
                     return monkey_1_value - monkey_2_value
                 case '/':
-                    return int(monkey_1_value // monkey_2_value)
+                    return monkey_1_value / monkey_2_value
         case number:
             return number
     return None
@@ -41,8 +41,7 @@ def binary_search(f: Callable, left_limit, right_limit):
     mid = int((right_limit + left_limit)//2)
     f_mid = f(mid)
     if f_mid == 0:
-        #Not a unique solution, search in the region
-        return min([x for x in range(left_limit - 10, right_limit + 10) if f(x)==0])
+        return mid
     elif f_mid > 0:
         return binary_search(f, mid, right_limit)
     elif f_mid < 0:
