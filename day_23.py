@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
 from collections import defaultdict
+import os
 
 class Moves(Enum):
     NORTH = 0
@@ -20,19 +21,18 @@ class Elf:
 
     def plan_move(self, direction: Moves, elf_positions: set[tuple[int, int]]) -> None:
 
+        self.planned_move = None
+
         check_north = not any([(x, self.position[1] - 1) in elf_positions for x in range(self.position[0] - 1, self.position[0] + 2)])
         check_south = not any([(x, self.position[1] + 1) in elf_positions for x in range(self.position[0] - 1, self.position[0] + 2)])
         check_west = not any([(self.position[0] - 1, y) in elf_positions for y in range(self.position[1] - 1, self.position[1] + 2)])
         check_east = not any([(self.position[0] + 1, y) in elf_positions for y in range(self.position[1] - 1, self.position[1] + 2)])
 
-        if all([check_north, check_south, check_east, check_west]):
-            self.planned_move = None
-        
-        else:
+        if not all([check_north, check_south, check_east, check_west]):
             for i in range(4):
-                direction = Moves((direction.value + i)%4)
+                new_direction = Moves((direction.value + i)%4)
 
-                match direction:
+                match new_direction:
                     case Moves.NORTH:
                         if check_north:
                             self.planned_move = (self.position[0], self.position[1] - 1)
@@ -71,7 +71,32 @@ def get_elves() -> list[Elf]:
     
     return elves
 
-def simulate_elves(n_rounds):
+def print_elves(elves: list[Elf]) -> None:
+    max_x = 0
+    min_x = 0
+    max_y = 0
+    min_y = 0
+    for elf in elves:
+        x, y = elf.get_position()
+        if x > max_x:
+            max_x = x
+        if x < min_x:
+            min_x = x
+        if y > max_y:
+            max_y = y
+        if y < min_y:
+            min_y = y
+
+    grid = [["." for _ in range(min_x, max_x + 1)] for _ in range(min_y, max_y + 1)]
+
+    for elf in elves:
+        position = elf.get_position()
+        grid[position[1] - min_y][position[0] - min_x] = "#"
+
+    print(f"x: ({min_x}:{max_x}), y: ({min_y}:{max_y})")
+    print("\n".join([" ".join(row) for row in grid]))
+
+def simulate_elves(n_rounds: Optional[int] = None):
     elves = get_elves()
     directions = [
         Moves.NORTH,
@@ -79,14 +104,22 @@ def simulate_elves(n_rounds):
         Moves.WEST,
         Moves.EAST
     ]
-    for i in range(n_rounds):
-        direction = directions[i%4]
+
+    i = 1
+    while True:
+
+        if n_rounds is not None:
+            if i == n_rounds:
+                return elves, i
+
+        direction = directions[(i-1)%4]
         elf_positions = {elf.get_position() for elf in elves}
 
         move_counter = defaultdict(int)
         for elf in elves:
             elf.plan_move(direction, elf_positions)
-            move_counter[elf.get_planned_move()] += 1
+            if (move:= elf.get_planned_move()) is not None:
+                move_counter[move] += 1
 
         for move in [key for key, value in move_counter.items() if value > 1]:
             for elf in elves:
@@ -96,11 +129,16 @@ def simulate_elves(n_rounds):
         for elf in elves:
             elf.move()
 
-    return elves
+        if len(move_counter) == 0:
+            return elves, i
+
+        i += 1
+
+
 
 
 def get_first_solution():
-    elves = simulate_elves(10)
+    elves = simulate_elves(10)[0]
     max_x = 0
     min_x = 0
     max_y = 0
@@ -117,13 +155,12 @@ def get_first_solution():
             min_y = y
 
 
-    return (max_x-min_x)*(max_y-min_y) - len(elves)
+    return (1 + max_x-min_x)*(1 + max_y-min_y) - len(elves)
 
 
 def get_second_solution():
-    pass
-
-
+    elves, turn = simulate_elves()
+    return turn
 
 print(get_first_solution())
 print(get_second_solution())
